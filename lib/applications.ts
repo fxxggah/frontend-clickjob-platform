@@ -1,20 +1,29 @@
-import API_URL, { getAuthHeaders } from "./api"
+import API_URL, { getAuthHeaders } from "./api";
 
 export async function createApplication(jobId: number, freelancerId: number) {
-  const queryParams = new URLSearchParams({
-    jobId: jobId.toString(),
-    freelancerId: freelancerId.toString()
-  });
-
-  const res = await fetch(`${API_URL}/applications?${queryParams.toString()}`, {
+  const url = `${API_URL}/applications?freelancerId=${freelancerId}`;
+  
+  const res = await fetch(url, {
     method: "POST",
     headers: getAuthHeaders(),
+    body: JSON.stringify({ jobId }),
   });
 
   if (!res.ok) {
-    const errorMsg = await res.text();
-    throw new Error(errorMsg || "Erro ao processar candidatura.");
+    const responseText = await res.text();
+    console.error(`Erro na requisição POST ${url} [HTTP ${res.status}]:`, responseText);
+
+    let errorMsg = "";
+    try {
+      const errorJson = JSON.parse(responseText);
+      errorMsg = errorJson.message || errorJson.error;
+    } catch {
+      errorMsg = responseText;
+    }
+
+    throw new Error(errorMsg || `Erro ao processar candidatura (HTTP ${res.status}).`);
   }
+
   return res.json();
 }
 
@@ -39,7 +48,6 @@ export async function getApplicationsByJob(jobId: number) {
     });
     if (!res.ok) return [];
     const data = await res.json();
-    //  Garante que pegamos a lista correta do DTO ou Page
     return Array.isArray(data) ? data : (data?.content || []);
   } catch (error) {
     console.error("Erro ao buscar candidatos:", error);
@@ -48,12 +56,15 @@ export async function getApplicationsByJob(jobId: number) {
 }
 
 export async function updateApplicationStatus(applicationId: number, status: 'ACCEPTED' | 'REFUSED') {
-  // [cite: 28, 31] Endpoint PATCH /api/applications/{id}/status?status=...
   const res = await fetch(`${API_URL}/applications/${applicationId}/status?status=${status}`, {
     method: 'PATCH',
     headers: getAuthHeaders(),
   });
 
-  if (!res.ok) throw new Error("Erro ao atualizar status");
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(errorText || "Erro ao atualizar status");
+  }
+
   return res.json();
 }
