@@ -183,11 +183,11 @@ export default function JobDetailsPage() {
                     </div>
                 </div>
 
-                {/* Corpo da Vaga */}
+                {/* Corpo da Vaga */}   
                 <div className="p-6 sm:p-8 md:p-12">
                     <section className="mb-8 sm:mb-12">
                         <h3 className="text-[10px] sm:text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 sm:mb-6 flex items-center gap-2">
-                            <Briefcase size={14} className="text-emerald-500" /> Escopo do Projeto
+                            <Briefcase size={14} className="text-emerald-500" /> Escopo do Serviço
                         </h3>
                         <div className="prose prose-slate max-w-none">
                             <p className="text-slate-600 leading-relaxed whitespace-pre-wrap text-base sm:text-lg font-medium">
