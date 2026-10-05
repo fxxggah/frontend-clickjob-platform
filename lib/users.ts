@@ -22,3 +22,15 @@ export async function deleteAccount(userId: number) {
 
   return true
 }
+
+export async function updateUserProfile(userId: number, data: { phone?: string; aboutMe?: string }) {
+  const res = await fetch(`${API_URL}/users/${userId}`, {
+    method: "PUT",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  })
+
+  if (!res.ok) throw new Error("Erro ao atualizar o perfil")
+
+  return res.json()
+}

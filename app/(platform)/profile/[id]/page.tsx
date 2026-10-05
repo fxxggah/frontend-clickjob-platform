@@ -10,17 +10,19 @@ import {
   ChevronLeft, 
   ShieldCheck, 
   Sparkles, 
-  ExternalLink, 
-  MapPin,
+  Phone, // ADICIONADO
   Loader2
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 
+// ADICIONADO phone e aboutMe
 interface UserData {
   id: number
   name: string
   email: string
+  phone?: string
+  aboutMe?: string
   createdAt: string
 }
 
@@ -144,6 +146,19 @@ export default function ProfilePage() {
                     </div>
                   </div>
 
+                  {/* NOVO CAMPO: TELEFONE */}
+                  {user.phone && (
+                    <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100 group hover:bg-white hover:border-emerald-200 transition-all cursor-default">
+                      <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm text-emerald-500">
+                          <Phone size={20} />
+                      </div>
+                      <div>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">Telefone</p>
+                          <p className="font-bold text-slate-700">{user.phone}</p>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
                     <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm text-emerald-500">
                         <Calendar size={20} />
@@ -160,10 +175,17 @@ export default function ProfilePage() {
             <div className="space-y-6">
                 <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Sobre o profissional</h4>
                 <div className="bg-slate-50/50 rounded-3xl p-6 border border-dashed border-slate-200 min-h-[140px] flex items-center justify-center">
-                    <div className="text-center">
-                        <p className="text-slate-400 text-sm font-medium italic">
-                            "O freelancer ainda não preencheu sua apresentação detalhada."
-                        </p>
+                    <div className="text-center w-full">
+                        {/* LÓGICA DO SOBRE MIM ADICIONADA */}
+                        {user.aboutMe ? (
+                            <p className="text-slate-600 text-sm font-medium whitespace-pre-wrap text-left">
+                                {user.aboutMe}
+                            </p>
+                        ) : (
+                            <p className="text-slate-400 text-sm font-medium italic">
+                                "O freelancer ainda não preencheu sua apresentação detalhada."
+                            </p>
+                        )}
                     </div>
                 </div>
             </div>
