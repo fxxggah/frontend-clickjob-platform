@@ -173,7 +173,7 @@ export default function ProfilePage() {
 
       {/* Badge de Verificação Inferior */}
       <p className="text-center mt-12 text-slate-400 text-[10px] font-black uppercase tracking-[0.4em] flex items-center justify-center gap-2">
-        <ShieldCheck size={14} className="text-emerald-500" /> Perfil Verificado ClickJob Security
+        <ShieldCheck size={14} className="text-emerald-500" /> ClickJob
       </p>
     </div>
   )
