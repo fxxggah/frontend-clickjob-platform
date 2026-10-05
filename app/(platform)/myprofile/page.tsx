@@ -205,7 +205,7 @@ export default function ProfilePage() {
                 className="w-full sm:w-auto bg-white text-red-600 hover:bg-red-50 hover:text-red-700 border border-red-200 shadow-sm font-bold rounded-xl h-11 px-6"
               >
                 <LogOut className="w-4 h-4 mr-2" />
-                Excluir Conta
+                Excluir Conta 
               </Button>
             </div>
           </section>
