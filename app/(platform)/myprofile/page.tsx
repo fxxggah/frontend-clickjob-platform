@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { getUserProfile, deleteAccount, updateUserProfile } from "@/lib/users" // <-- importamos a função nova
+import { getUserProfile, deleteAccount, updateUserProfile } from "@/lib/users"
 import { Button } from "@/components/ui/button"
 import { Loader2, User, Mail, Briefcase, ShieldAlert, Settings2, LogOut, Phone, FileText } from "lucide-react"
 
@@ -9,10 +9,11 @@ export default function ProfilePage() {
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   
-  // Novos estados para controle de edição
   const [isEditing, setIsEditing] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [editData, setEditData] = useState({ phone: "", aboutMe: "" })
+  const [editData, setEditData] = useState({ name: "", phone: "", aboutMe: "" })
+  const [phoneError, setPhoneError] = useState("")
+  const [nameError, setNameError] = useState("")
 
   useEffect(() => { loadUser() }, [])
 
@@ -22,9 +23,9 @@ export default function ProfilePage() {
       if (!userId) return
       const data = await getUserProfile(Number(userId))
       setUser(data)
-      // Popula os dados iniciais do formulário de edição
       setEditData({
-        phone: data.phone || "",
+        name: data.name || "",
+        phone: formatPhone(data.phone || ""),
         aboutMe: data.aboutMe || ""
       })
     } catch (err) {
@@ -34,16 +35,59 @@ export default function ProfilePage() {
     }
   }
 
-  // Função de salvar edição
+  // Função para aplicar a máscara de telefone dinamicamente
+  function formatPhone(value: string) {
+    if (!value) return ""
+    
+    // Remove tudo que não for número
+    let numericValue = value.replace(/\D/g, "")
+    
+    // Limita a 11 dígitos numéricos
+    if (numericValue.length > 11) {
+      numericValue = numericValue.slice(0, 11)
+    }
+
+    // Aplica a formatação (XX) XXXXX-XXXX ou (XX) XXXX-XXXX
+    if (numericValue.length === 0) return ""
+    if (numericValue.length <= 2) return `(${numericValue}`
+    if (numericValue.length <= 6) return `(${numericValue.slice(0, 2)}) ${numericValue.slice(2)}`
+    if (numericValue.length <= 10) return `(${numericValue.slice(0, 2)}) ${numericValue.slice(2, 6)}-${numericValue.slice(6)}`
+    
+    return `(${numericValue.slice(0, 2)}) ${numericValue.slice(2, 7)}-${numericValue.slice(7)}`
+  }
+
+  // Validação apenas se tem o mínimo de números esperados (10 ou 11)
+  function validatePhone(phone: string) {
+    if (!phone) return true
+    const numericLength = phone.replace(/\D/g, "").length
+    return numericLength >= 10 && numericLength <= 11
+  }
+
   async function handleSave() {
+    let hasError = false;
+
+    if (!editData.name || editData.name.trim().length < 3) {
+      setNameError("O nome deve ter pelo menos 3 caracteres")
+      hasError = true;
+    }
+
+    if (!validatePhone(editData.phone) && editData.phone !== "") {
+      setPhoneError("Telefone incompleto ou inválido")
+      hasError = true;
+    }
+
+    if (hasError) return;
+
     try {
       setSaving(true)
+      setPhoneError("")
+      setNameError("")
       const userId = localStorage.getItem("userId")
       if (!userId) return
       
       const updatedUser = await updateUserProfile(Number(userId), editData)
-      setUser(updatedUser) // Atualiza os dados na tela com a resposta do backend
-      setIsEditing(false)  // Sai do modo de edição
+      setUser(updatedUser)
+      setIsEditing(false)
     } catch (err) {
       console.error(err)
       alert("Erro ao atualizar o perfil.")
@@ -108,7 +152,6 @@ export default function ProfilePage() {
         <div className="space-y-8">
           
           <section>
-            {/* Cabeçalho da Seção com botão de Editar */}
             <div className="flex items-center justify-between mb-4 px-2">
               <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest">
                 Informações Pessoais
@@ -124,59 +167,120 @@ export default function ProfilePage() {
             </div>
 
             <div className="bg-slate-50/50 rounded-3xl p-2 border border-slate-100/50 flex flex-col gap-1">
-              {/* Campos Fixos */}
-              <ProfileItem icon={<User size={18}/>} label="Nome Completo" value={user?.name} />
-              <ProfileItem icon={<Mail size={18}/>} label="Endereço de E-mail" value={user?.email} />
-              <ProfileItem icon={<Briefcase size={18}/>} label="Tipo de Conta" value={user?.userType === 'FREELANCER' ? 'Freelancer' : 'Contratante'} />
-              
-              {/* Campos Editáveis */}
-              {isEditing ? (
-                <div className="p-4 bg-white border border-emerald-100 rounded-2xl shadow-sm mt-2 space-y-4 animate-in fade-in zoom-in-95 duration-200">
-                  <div>
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block ml-1">Telefone</label>
-                    <input
-                      type="text"
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-slate-700 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
-                      placeholder="(11) 99999-9999"
-                      value={editData.phone}
-                      onChange={(e) => setEditData({ ...editData, phone: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block ml-1">Sobre Mim</label>
-                    <textarea
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-slate-700 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all resize-none"
-                      rows={4}
-                      placeholder="Fale um pouco sobre suas habilidades e experiências..."
-                      value={editData.aboutMe}
-                      onChange={(e) => setEditData({ ...editData, aboutMe: e.target.value })}
-                    />
-                  </div>
-                  
-                  <div className="flex gap-2 pt-2">
-                    <Button 
-                      onClick={handleSave} 
-                      disabled={saving}
-                      className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl h-11"
-                    >
-                      {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Salvar Alterações"}
-                    </Button>
-                    <Button 
-                      onClick={() => {
-                        setIsEditing(false);
-                        setEditData({ phone: user?.phone || "", aboutMe: user?.aboutMe || "" });
-                      }} 
-                      variant="outline" 
-                      className="flex-1 font-bold rounded-xl h-11 text-slate-600 border-slate-200 hover:bg-slate-50"
-                    >
-                      Cancelar
-                    </Button>
-                  </div>
-                </div>
+              {!isEditing ? (
+                <>
+                  <ProfileItem icon={<User size={18}/>} label="Nome Completo" value={user?.name} />
+                  <ProfileItem icon={<Mail size={18}/>} label="Endereço de E-mail" value={user?.email} />
+                  <ProfileItem icon={<Briefcase size={18}/>} label="Tipo de Conta" value={user?.userType === 'FREELANCER' ? 'Freelancer' : 'Contratante'} />
+                  <ProfileItem icon={<Phone size={18}/>} label="Telefone" value={user?.phone ? formatPhone(user.phone) : ""} />
+                  <ProfileItem icon={<FileText size={18}/>} label="Sobre mim" value={user?.aboutMe} />
+                </>
               ) : (
                 <>
-                  <ProfileItem icon={<Phone size={18}/>} label="Telefone" value={user?.phone} />
-                  <ProfileItem icon={<FileText size={18}/>} label="Sobre mim" value={user?.aboutMe} />
+                  {/* Itens fixos que não podem ser editados */}
+                  <ProfileItem icon={<Mail size={18}/>} label="Endereço de E-mail" value={user?.email} />
+                  <ProfileItem icon={<Briefcase size={18}/>} label="Tipo de Conta" value={user?.userType === 'FREELANCER' ? 'Freelancer' : 'Contratante'} />
+
+                  <div className="p-4 bg-white border border-emerald-100 rounded-2xl shadow-sm mt-2 space-y-5 animate-in fade-in zoom-in-95 duration-200">
+                    
+                    {/* CAMPO NOME */}
+                    <div>
+                      <div className="flex justify-between items-center mb-1.5 px-1">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
+                          Nome Completo
+                        </label>
+                        <span className="text-[10px] font-medium text-slate-400">
+                          {editData.name.length}/100
+                        </span>
+                      </div>
+                      <input
+                        type="text"
+                        maxLength={100}
+                        className={`w-full bg-slate-50 border ${nameError ? 'border-red-400 focus:border-red-500 focus:ring-red-500' : 'border-slate-200 focus:border-emerald-500 focus:ring-emerald-500'} rounded-xl p-3 text-sm text-slate-700 focus:outline-none focus:ring-1 transition-all`}
+                        placeholder="Seu nome completo"
+                        value={editData.name}
+                        onChange={(e) => {
+                          setNameError("")
+                          setEditData({ ...editData, name: e.target.value })
+                        }}
+                      />
+                      {nameError && (
+                        <p className="text-[11px] text-red-500 mt-1 px-1 font-medium">{nameError}</p>
+                      )}
+                    </div>
+
+                    {/* CAMPO TELEFONE */}
+                    <div>
+                      <div className="flex justify-between items-center mb-1.5 px-1">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
+                          Telefone
+                        </label>
+                        <span className="text-[10px] font-medium text-slate-400">
+                          {editData.phone.length}/15
+                        </span>
+                      </div>
+                      <input
+                        type="text"
+                        maxLength={15}
+                        className={`w-full bg-slate-50 border ${phoneError ? 'border-red-400 focus:border-red-500 focus:ring-red-500' : 'border-slate-200 focus:border-emerald-500 focus:ring-emerald-500'} rounded-xl p-3 text-sm text-slate-700 focus:outline-none focus:ring-1 transition-all`}
+                        placeholder="(11) 99999-9999"
+                        value={editData.phone}
+                        onChange={(e) => {
+                          setPhoneError("")
+                          setEditData({ ...editData, phone: formatPhone(e.target.value) })
+                        }}
+                      />
+                      {phoneError && (
+                        <p className="text-[11px] text-red-500 mt-1 px-1 font-medium">{phoneError}</p>
+                      )}
+                    </div>
+
+                    {/* CAMPO SOBRE MIM */}
+                    <div>
+                      <div className="flex justify-between items-center mb-1.5 px-1">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
+                          Sobre Mim
+                        </label>
+                        <span className={`text-[10px] font-medium ${editData.aboutMe.length >= 480 ? 'text-amber-500 font-bold' : 'text-slate-400'}`}>
+                          {editData.aboutMe.length}/500
+                        </span>
+                      </div>
+                      <textarea
+                        maxLength={500}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-slate-700 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all resize-none"
+                        rows={4}
+                        placeholder="Fale um pouco sobre suas habilidades e experiências..."
+                        value={editData.aboutMe}
+                        onChange={(e) => setEditData({ ...editData, aboutMe: e.target.value })}
+                      />
+                    </div>
+                    
+                    <div className="flex gap-2 pt-2">
+                      <Button 
+                        onClick={handleSave} 
+                        disabled={saving}
+                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl h-11"
+                      >
+                        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Salvar Alterações"}
+                      </Button>
+                      <Button 
+                        onClick={() => {
+                          setIsEditing(false);
+                          setPhoneError("");
+                          setNameError("");
+                          setEditData({ 
+                            name: user?.name || "", 
+                            phone: formatPhone(user?.phone || ""), 
+                            aboutMe: user?.aboutMe || "" 
+                          });
+                        }} 
+                        variant="outline" 
+                        className="flex-1 font-bold rounded-xl h-11 text-slate-600 border-slate-200 hover:bg-slate-50"
+                      >
+                        Cancelar
+                      </Button>
+                    </div>
+                  </div>
                 </>
               )}
             </div>
